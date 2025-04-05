@@ -58,9 +58,9 @@ def processing():
             subprocess.run(['python3', 'education_expert.py', transcription_path], check=True)
 
             # Check for expected file
-            education_output = os.path.join(app.config['UPLOAD_FOLDER'], "education_expert_analysis.txt")
-            if not os.path.exists(education_output):
-                raise FileNotFoundError("education_expert_analysis.txt not found after script.")
+           education_output = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_education_expert_analysis.txt")
+            print("▶️ Running medical_expert.py...")
+            subprocess.run(['python3', 'medical_expert.py', transcription_path, education_output], check=True)
 
             # STEP 3: Run medical expert
             print("▶️ Running medical_expert.py...")
