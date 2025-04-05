@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>STAT - Upload Your Audio</title>
+  <!-- Using Tailwind CSS for basic styling -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-4 text-center">Upload Your Audio</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="audio" accept="audio/*" class="mb-4 w-full">
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        Begin Processing
+      </button>
+    </form>
+  </div>
+</body>
+</html>

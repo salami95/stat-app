@@ -1,0 +1,15 @@
+flask
+gunicorn
+openai
+requests
+python-dotenv
+faiss-cpu
+llama-index
+langchain
+certifi
+datasets
+elevenlabs
+sentence-transformers
+ipykernel
+pydub
+numpy
