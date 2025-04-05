@@ -72,7 +72,11 @@ def processing():
 
             # STEP 4: Run podcast script generator
             print("▶️ Running podcast_script_generator.py...")
-            subprocess.run(['python3', 'podcast_script_generator.py'], check=True)
+            subprocess.run([
+                'python3', 'podcast_script_generator.py',
+                education_output, medical_output
+            ], check=True)
+
 
             script_output = os.path.join(app.config['UPLOAD_FOLDER'], "podcast_script.txt")
             if not os.path.exists(script_output):
