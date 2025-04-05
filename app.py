@@ -17,19 +17,9 @@ def log_status(message):
     status_log.append(f"{timestamp}{message}")
     print(f"{timestamp}{message}")  # Optional: prints to terminal
 
-# ✅ SSE endpoint to stream live logs to the frontend
-@app.route("/stream")
-def stream():
-    def event_stream():
-        last_index = 0
-        while True:
-            if len(status_log) > last_index:
-                new = status_log[last_index:]
-                last_index = len(status_log)
-                for line in new:
-                    yield f"data: {line}\n\n"
-            time.sleep(0.5)
-    return Response(event_stream(), mimetype="text/event-stream")
+@app.route("/get-log")
+def get_log():
+    return {"log": status_log}
 
 # 🟩 Welcome screen (upload audio)
 @app.route('/', methods=['GET'])
