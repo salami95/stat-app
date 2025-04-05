@@ -18,45 +18,12 @@
     <h1 class="text-3xl font-bold mb-4">Processing Your Audio...</h1>
 
     <div id="status-container" class="bg-white p-4 rounded shadow">
-      <pre id="status-log" class="text-gray-800">Waiting for updates...</pre>
+      <pre id="status-log" class="text-gray-800">{{ log_output }}</pre>
     </div>
 
     <div class="mt-4">
-      <a href="/results" class="text-blue-600 hover:underline">Go to Results</a>
+      <a href="/" class="text-blue-600 hover:underline">Upload Another</a>
     </div>
   </div>
-
-  <script>
-    const logElement = document.getElementById("status-log");
-
-    async function fetchLog() {
-      try {
-        const res = await fetch("/get-log");
-        const data = await res.json();
-
-        if (data.log && data.log.length > 0) {
-          logElement.innerText = data.log.join('\n');
-          logElement.scrollTop = logElement.scrollHeight;
-        } else {
-          logElement.innerText = "Waiting for updates...";
-        }
-      } catch (err) {
-        logElement.innerText = "Error retrieving logs.";
-      }
-    }
-
-    let pollCount = 0;
-    const maxPolls = 300;
-
-    const interval = setInterval(() => {
-      if (pollCount >= maxPolls) {
-        clearInterval(interval);
-        logElement.innerText += "\n[Timeout reached. Please check your connection or try again.]";
-      } else {
-        fetchLog();
-        pollCount++;
-      }
-    }, 1000);
-  </script>
 </body>
 </html>
