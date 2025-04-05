@@ -1,15 +1,22 @@
-flask
-gunicorn
-openai
-requests
-python-dotenv
-faiss-cpu
-llama-index
-langchain
-certifi
-datasets
-elevenlabs
-sentence-transformers
-ipykernel
-pydub
-numpy
+# Core app and webserver
+flask==2.3.3
+gunicorn==21.2.0
+
+# LLM interaction and AI agents
+openai==1.14.3
+langchain==0.1.14
+llama-index==0.10.22
+faiss-cpu==1.7.4
+
+# Audio handling
+elevenlabs==1.2.2
+pydub==0.25.1
+
+# Supporting packages
+requests==2.31.0
+python-dotenv==1.0.1
+sentence-transformers==2.2.2
+certifi==2024.2.2
+datasets==2.18.0
+numpy==1.26.4
+ipykernel==6.29.4
