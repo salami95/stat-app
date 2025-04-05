@@ -1,20 +1,25 @@
-# Use slim version of Python to keep image size down
+# Use an official lightweight Python image
 FROM python:3.12-slim
 
-# Install system dependencies (add others like gcc if needed)
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Set working directory
+# Set work directory
 WORKDIR /app
 
-# Copy project files into container
-COPY . /app
+# Install system dependencies
+RUN apt-get update && apt-get install -y ffmpeg gcc && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies (no cache for speed)
+# Install Python dependencies
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port Flask will run on
+# Copy project files
+COPY . /app/
+
+# Expose the port
 EXPOSE 8080
 
-# Start your app with Gunicorn
+# Start the app
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
