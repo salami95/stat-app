@@ -1,95 +1,93 @@
-from openai import OpenAI
+# medical_expert.py
+
 import os
-from dotenv import load_dotenv
+import sys
+import openai
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Get the OpenAI API key from environment variables
-api_key = os.getenv('OPENAI_API_KEY')
+api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
-    raise ValueError("OpenAI API key not found. Please set it in the .env file.")
+    raise ValueError("❌ OPENAI_API_KEY not found in environment.")
 
-OpenAI.api_key = api_key
-client = OpenAI(api_key=api_key)
+openai.api_key = api_key
 
-try:
-    # Load the transcription file
-    with open("/Users/kevinsalimi_1/STAT/NBME_FORM_8_OB-GYN.txt", "r") as file:  # Updated file path
-        transcription_text = file.read()
-    print("Loaded NBME_FORM_8_OB-GYN.txt successfully.")  # Updated log message
-except FileNotFoundError:
-    print("Error: NBME_FORM_8_OB-GYN.txt not found.")  # Updated error message
-    exit(1)
+def load_file(filepath):
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"❌ File not found: {filepath}")
+    with open(filepath, 'r') as f:
+        return f.read()
 
-# Function to split the transcription into chunks
-def split_transcription(transcription, max_tokens=1500):
-    """Split the transcription into smaller chunks to fit within the model's token limit."""
-    words = transcription.split()
+def split_transcription(text, max_tokens=1500, overlap=100):
+    words = text.split()
     chunks = []
-    current_chunk = []
-    current_length = 0
+    start = 0
 
-    for word in words:
-        current_chunk.append(word)
-        current_length += len(word) + 1  # Account for spaces
-        if current_length >= max_tokens:
-            chunks.append(" ".join(current_chunk))
-            current_chunk = []
-            current_length = 0
-
-    if current_chunk:
-        chunks.append(" ".join(current_chunk))
+    while start < len(words):
+        end = min(len(words), start + max_tokens)
+        chunk = " ".join(words[start:end])
+        chunks.append(chunk)
+        start = end - overlap  # move back for overlap
 
     return chunks
 
-# Split the transcription into chunks
-chunks = split_transcription(transcription_text)
+def generate_response(chunk):
+    prompt = f"""
+You are a medical expert with deep understanding of the complexities of medicine. Below is a transcription of a medical student's study session that outlines pitfalls, mistakes, and gaps in knowledge. Your task is to supply detailed, comprehensive information addressing these gaps, ensuring the student has all the necessary content to answer similar questions correctly in the future. Additionally, reinforce the topics the student answered correctly to aid in spaced repetition as the student will be reviewing the content you provide on a regular basis to remind themselves of topics they have covered. Deliver your response as plain text with no extra formatting.
 
-# Initialize a list to store the results
-results = []
+Transcription:
+{chunk}
+"""
+    try:
+        print("⏳ Sending request to OpenAI API...")
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # Optional: replace with "o3-mini" if using that instead
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+        return response['choices'][0]['message']['content']
+    except Exception as e:
+        print(f"❌ Error during OpenAI API call: {e}")
+        return f"[Error processing this chunk: {e}]"
 
-# Process each chunk
-for i, chunk in enumerate(chunks):
-    print(f"Processing chunk {i + 1} of {len(chunks)}...")
-    chunk_prompt = f"""
-    You are a medical expert with deep understanding of the complexities of medicine. Below is a transcription of a medical student's study session that outlines pitfalls, mistakes, and gaps in knowledge. Your task is to supply detailed, comprehensive information addressing these gaps, ensuring the student has all the necessary content to answer similar questions correctly in the future. Additionally, reinforce the topics the student answered correctly to aid in spaced repetition as the student will be reviewing the content you provide on a regular basis to remind themselves of topics they have covered. Deliver your response as plain text with no extra formatting.
+def main():
+    if len(sys.argv) < 3:
+        print("❌ Usage: python3 medical_expert.py <transcription_path> <education_analysis_path>")
+        sys.exit(1)
 
-    Transcription:
-    {chunk}
-    """
+    transcription_path = sys.argv[1]
+    education_path = sys.argv[2]
 
     try:
-        print("Sending request to OpenAI API...")
-        # Generate the analysis for the current chunk
-        response = client.responses.create(
-            model="o3-mini",
-            reasoning={"effort": "medium"},
-            input=[
-                {
-                    "role": "user", 
-                    "content": chunk_prompt
-                }
-            ],
-            timeout=600  # Add a timeout to prevent indefinite hanging
-        )
-        results.append(response.output_text)
-        print(f"Processed chunk {i + 1} successfully.")
+        print(f"📄 Loading transcription from: {transcription_path}")
+        transcription_text = load_file(transcription_path)
+
+        print(f"📄 Loading education expert analysis from: {education_path}")
+        education_text = load_file(education_path)
+
+        combined_input = transcription_text + "\n\n# Education Analysis\n\n" + education_text
+        chunks = split_transcription(combined_input)
+
+        print(f"🔍 Split into {len(chunks)} chunks for processing.")
+
+        results = []
+        for idx, chunk in enumerate(chunks):
+            print(f"▶️ Processing chunk {idx + 1} of {len(chunks)}")
+            result = generate_response(chunk)
+            results.append(result)
+            print(f"✅ Finished chunk {idx + 1}")
+
+        final_output = "\n\n---\n\n".join(results)
+
+        base_name = os.path.splitext(os.path.basename(transcription_path))[0].replace("_transcription", "")
+        output_path = os.path.join(os.path.dirname(transcription_path), f"{base_name}_medical_expert_analysis.txt")
+
+        with open(output_path, 'w') as f:
+            f.write(final_output)
+
+        print(f"✅ Saved medical expert analysis to: {output_path}")
+
     except Exception as e:
-        print(f"Error during OpenAI API call for chunk {i + 1}: {e}")
-        exit(1)
+        print(f"❌ General error: {e}")
+        sys.exit(1)
 
-# Combine all results into a single output
-final_output = "\n\n".join(results)
-
-try:
-    # Save the combined results to a new file
-    with open("medical_expert.txt", "w") as file:
-        file.write(final_output)
-    print("Saved medical_expert.txt successfully.")
-except Exception as e:
-    print(f"Error saving medical_expert.txt: {e}")
-    exit(1)
-
-
-
+if __name__ == "__main__":
+    main()
