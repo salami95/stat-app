@@ -13,3 +13,4 @@ sentence-transformers
 ipykernel
 pydub
 numpy
+python_version == "3.12"
