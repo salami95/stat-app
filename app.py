@@ -55,7 +55,7 @@ def processing():
 
             # STEP 2: Run education expert
             print("▶️ Running education_expert.py...")
-            subprocess.run(['python3', 'education_expert.py'], check=True)
+            subprocess.run(['python3', 'education_expert.py', transcription_path], check=True)
 
             # Check for expected file
             education_output = os.path.join(app.config['UPLOAD_FOLDER'], "education_expert_analysis.txt")
