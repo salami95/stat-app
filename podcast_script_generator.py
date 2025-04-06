@@ -1,8 +1,8 @@
 # podcast_script_generator.py
 
 import os
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.prompts import ChatPromptTemplate
 
 
 # Generate a script for a single topic using student context + grounded facts
