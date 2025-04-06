@@ -2,13 +2,11 @@
 
 import os
 import sys
-import openai
-
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("❌ OPENAI_API_KEY not found in environment.")
-
-openai.api_key = api_key
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
 
 
 def load_file(filepath: str) -> str:
@@ -18,48 +16,6 @@ def load_file(filepath: str) -> str:
         return f.read()
 
 
-def split_transcription(text: str, max_tokens: int = 1500, overlap: int = 100) -> list:
-    words = text.split()
-    chunks = []
-    start = 0
-
-    while start < len(words):
-        end = min(len(words), start + max_tokens)
-        chunk = " ".join(words[start:end])
-        chunks.append(chunk)
-        start = end - overlap
-
-    return chunks
-
-
-def generate_response(chunk: str) -> str:
-    prompt = f"""
-You are a medical expert with deep understanding of clinical and scientific medicine. Below is a transcription of a medical student's study session, including analysis of their learning gaps and strengths. 
-
-Your task is to:
-1. Clarify misunderstood or incomplete concepts using accurate, detailed medical information.
-2. Reinforce correct information for spaced repetition.
-3. Avoid excessive verbosity—focus on educational impact.
-
-Return your answer as plain text with no extra formatting.
-
-Content:
-{chunk}
-"""
-    try:
-        print("⏳ Sending request to OpenAI API...")
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-        return response['choices'][0]['message']['content']
-    except Exception as e:
-        print(f"❌ Error during OpenAI API call: {e}")
-        return f"[Error processing this chunk: {e}]"
-
-
-# ✅ Exposed function for orchestration
 def generate_clarified_explanations(transcription_path: str, education_path: str) -> str:
     print(f"📄 Loading transcription from: {transcription_path}")
     transcription_text = load_file(transcription_path)
@@ -67,18 +23,47 @@ def generate_clarified_explanations(transcription_path: str, education_path: str
     print(f"📄 Loading education expert analysis from: {education_path}")
     education_text = load_file(education_path)
 
+    # Combine transcript and education expert reflection
     combined_input = transcription_text + "\n\n# Education Analysis\n\n" + education_text
-    chunks = split_transcription(combined_input)
 
-    print(f"🔍 Split into {len(chunks)} chunks for processing.")
-    results = []
-    for idx, chunk in enumerate(chunks):
-        print(f"▶️ Processing chunk {idx + 1} of {len(chunks)}")
-        result = generate_response(chunk)
-        results.append(result)
-        print(f"✅ Finished chunk {idx + 1}")
+    print("📦 Loading MedRAG FAISS index...")
+    retriever = FAISS.load_local(
+        "./rag/medrag_index",
+        OpenAIEmbeddings(),
+        index_name="index"
+    ).as_retriever()
 
-    return "\n\n---\n\n".join(results)
+    # Construct the RAG prompt
+    prompt_template = PromptTemplate.from_template(
+        """
+You are a medical expert with deep understanding of the complexities of medicine.
+You are provided with a text file containing an educational evaluation from a medical student's study session that outlines pitfalls, mistakes, and gaps in knowledge.
+
+Your task is to supply detailed, comprehensive information addressing these gaps,
+ensuring the student has all the necessary content to answer similar questions correctly in the future.
+
+Additionally, reinforce the topics the student answered correctly to aid in spaced repetition,
+as the student will be reviewing the content you provide on a regular basis.
+
+Use only the context provided to support your answer.
+Deliver your response as plain text with no extra formatting.
+
+STUDENT STUDY SESSION:
+{question}
+"""
+    )
+
+    print("🧠 Initializing LangChain RAG pipeline...")
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=ChatOpenAI(model="gpt-4", temperature=0.7),
+        retriever=retriever,
+        chain_type="stuff",
+        chain_type_kwargs={"prompt": prompt_template}
+    )
+
+    print("🤖 Generating RAG-based explanation...")
+    result = qa_chain.run(combined_input)
+    return result
 
 
 def main():
