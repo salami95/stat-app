@@ -4,7 +4,8 @@ import os
 from io import BytesIO
 from elevenlabs.client import ElevenLabs
 
-def transcribe_audio(audio_path):
+
+def transcribe_audio(audio_path: str) -> str:
     """
     Transcribes a study session audio file using ElevenLabs Scribe.
     Returns the raw transcription text.
@@ -29,7 +30,12 @@ def transcribe_audio(audio_path):
             diarize=True
         )
 
+        # Log metadata
         print("✅ Transcription complete.")
+        print(f"🗣️ Speakers detected: {len(set([seg['speaker'] for seg in result.segments]))}")
+        print(f"📝 Total segments: {len(result.segments)}")
+
+        # Optionally: return full JSON or just raw text
         return result.text
 
     except Exception as e:
