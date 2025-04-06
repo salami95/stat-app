@@ -7,8 +7,9 @@ MODEL_ID = "eleven_multilingual_v2"
 OUTPUT_FORMAT = "mp3_44100_128"  # Best compatibility and audio quality
 
 client = ElevenLabs(
-    api_key=os.getenv("ELEVEN_API_KEY")  # Must be defined in your .env
+    api_key=os.environ["RelentlessKomodoDragon"]
 )
+
 
 def generate_audio_for_script(text, topic_name, output_dir):
     response = client.text_to_speech.convert(
