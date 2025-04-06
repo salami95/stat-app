@@ -1,7 +1,6 @@
 import os
 from flask import Flask, request, redirect, render_template, session, url_for
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
 import uuid
 
 # Import pipeline modules
@@ -11,9 +10,8 @@ from podcast_script_generator import generate_all_scripts
 from generate_audio import generate_all_audio
 
 # === INIT APP ===
-load_dotenv()
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET", "dev-key")  # Replace in production
+app.secret_key = os.environ['FLASK_SECRET']  # Must be defined in Railway
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
