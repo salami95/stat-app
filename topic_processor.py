@@ -1,9 +1,9 @@
 import os
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.document_loaders import TextLoader
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.document_loaders import TextLoader
 from langchain.chains import RetrievalQA
 
 # 1. Extract topics using LLM
