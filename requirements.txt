@@ -1,20 +1,13 @@
-# Core app and webserver
 flask==2.3.3
 gunicorn==21.2.0
-
-# LLM interaction and AI agents
 openai==1.14.3
 langchain==0.1.14
-langchain-community>=0.0.20
 langchain-core>=0.1.30
+langchain-community>=0.0.20
 llama-index==0.10.22
 faiss-cpu
-
-# Audio handling
 elevenlabs==1.2.2
 pydub==0.25.1
-
-# Supporting packages
 requests==2.31.0
 python-dotenv==1.0.1
 sentence-transformers==2.2.2
