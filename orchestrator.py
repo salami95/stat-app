@@ -8,7 +8,6 @@ from education_expert import analyze_student_performance
 from build_medrag_index import query_medrag
 from medical_expert import generate_clarified_explanations
 from podcast_script_generator import generate_script
-from eleven_labs_scribe import generate_audio_narration
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
