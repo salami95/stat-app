@@ -66,3 +66,6 @@ def generate_all_scripts(session_dir):
 
     print(f"[INFO] All topic scripts written to: {output_dir}")
     return output_dir
+
+# Alias for orchestrator compatibility
+generate_podcast_script = generate_all_scripts
