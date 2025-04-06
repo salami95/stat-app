@@ -2,11 +2,11 @@
 
 import os
 import sys
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chains import RetrievalQA
+from langchain_community.prompts import PromptTemplate
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.chat_models import ChatOpenAI
 
 
 def load_file(filepath: str) -> str:
