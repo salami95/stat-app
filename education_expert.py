@@ -61,6 +61,10 @@ def analyze_transcript(transcript):
             }]
         }
 
+# ✅ Added this for orchestrator.py compatibility
+def analyze_student_performance(transcript: str) -> str:
+    result = analyze_transcript(transcript)
+    return result["script"]
 
 def main():
     if len(sys.argv) < 2:
