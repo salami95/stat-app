@@ -1,10 +1,10 @@
 import os
 from langchain_community.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_community.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
-from langchain.chains import RetrievalQA
+from langchain_community.chains import RetrievalQA
 
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
