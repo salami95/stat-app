@@ -1,137 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
   <title>Results - STAT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
   <div class="container mx-auto px-4 py-8 max-w-4xl">
-    <!-- Start Over -->
-    <div class="mb-4">
-      <a href="{{ url_for('welcome') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
-        &#8592; Start over
+    
+    <div class="mb-6">
+      <a href="{{ url_for('welcome') }}" class="text-blue-600 hover:underline">
+        ← Upload Another Session
       </a>
     </div>
 
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-blue-700 mb-4">Your Personal Podcast is Ready!</h1>
-      <p class="text-gray-600 max-w-lg mx-auto">
-        We’ve created a customized review to help you improve your study performance.
-      </p>
+    <div class="text-center mb-10">
+      <h1 class="text-3xl font-bold text-blue-700">Your Personalized Podcast</h1>
+      <p class="text-gray-600">Download or listen to each segment below. Study smarter, not harder.</p>
     </div>
 
-    <!-- Podcast Box -->
-    <div class="bg-white shadow rounded-lg p-6 mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center">
-          <button class="bg-gray-200 rounded-full p-2 mr-4">
-            <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M4 4h12v12H4z" />
-            </svg>
-          </button>
-          <div>
-            <p class="font-medium">Your Study Session Review</p>
-            <p class="text-sm text-gray-500">15:30 • STAT Analysis</p>
+    {% if session and session.topics %}
+      {% for topic in session.topics %}
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+          <h2 class="text-2xl font-semibold text-gray-800 mb-2">{{ topic }}</h2>
+          
+          <audio controls class="w-full mb-4">
+            <source src="{{ url_for('static', filename=session.session_dir + '/audio/' + topic.replace(' ', '_') + '.mp3') }}" type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+
+          <div class="border rounded p-4 bg-gray-50 text-sm text-gray-700 whitespace-pre-wrap">
+            {{ session.scripts[topic] }}
           </div>
         </div>
-        <div>
-          <a href="{{ session.podcast_url if session and session.podcast_url else '#' }}" target="_blank"
-             class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v4h16v-4M12 12v8m0 0l-3-3m3 3l3-3M12 4v8"/>
-            </svg>
-            Download
-          </a>
-        </div>
-      </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-center text-gray-500">No results found for this session.</p>
+    {% endif %}
 
-      <!-- Tabs -->
-      <div class="border rounded-lg">
-        <div class="border-b px-4">
-          <div class="flex">
-            <button id="tab-transcript" class="py-2 px-4 focus:outline-none border-b-2 border-blue-600 font-medium" onclick="showTab('transcript')">
-              Review Script
-            </button>
-            <button id="tab-summary" class="py-2 px-4 focus:outline-none font-medium text-gray-600" onclick="showTab('summary')">
-              Key Points
-            </button>
-          </div>
-        </div>
-
-        <!-- Script -->
-        <div id="content-transcript" class="p-4">
-          {% if session and session.podcast_script %}
-            {% for line in session.podcast_script.split('\n') %}
-              {% if line.startswith('# ') %}
-                <h1 class="text-2xl font-bold mt-4 mb-2">{{ line[2:] }}</h1>
-              {% elif line.startswith('## ') %}
-                <h2 class="text-xl font-semibold mt-4 mb-2">{{ line[3:] }}</h2>
-              {% elif line.startswith('### ') %}
-                <h3 class="text-lg font-medium mt-3 mb-1">{{ line[4:] }}</h3>
-              {% elif line.startswith('- ') %}
-                <li class="ml-4">{{ line[2:] }}</li>
-              {% elif line.strip() == '' %}
-                <br>
-              {% else %}
-                <p class="my-2">{{ line }}</p>
-              {% endif %}
-            {% endfor %}
-          {% else %}
-            <p>No script available</p>
-          {% endif %}
-        </div>
-
-        <!-- Summary -->
-        <div id="content-summary" class="p-4 hidden">
-          {% if session and session.opportunities %}
-            <div class="mb-4">
-              {% for item in session.opportunities %}
-              <div class="border rounded-lg p-3 mb-3">
-                <div class="flex justify-between items-start mb-1">
-                  <h4 class="font-medium">{{ item.topic }}</h4>
-                  <span class="px-2 py-1 rounded border
-                    {% if item.severity == 'major' %}bg-red-100 text-red-800 border-red-200
-                    {% elif item.severity == 'moderate' %}bg-orange-100 text-orange-800 border-orange-200
-                    {% elif item.severity == 'minor' %}bg-yellow-100 text-yellow-800 border-yellow-200
-                    {% else %}bg-gray-100 text-gray-800 border-gray-200{% endif %}">
-                    {{ item.severity }}
-                  </span>
-                </div>
-                <p class="text-sm text-gray-600">{{ item.description }}</p>
-              </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="text-sm text-gray-500">No key points identified.</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="text-center text-sm text-gray-500">
-      <p>For best results, use STAT regularly during your study sessions!</p>
+    <div class="text-center text-xs text-gray-400 mt-10">
+      <p>Made with ❤️ by STAT. Powered by LangChain, GPT-4, and ElevenLabs.</p>
     </div>
   </div>
-
-  <!-- Tab Switching Script -->
-  <script>
-    function showTab(tabName) {
-      document.getElementById("content-transcript").classList.add("hidden");
-      document.getElementById("content-summary").classList.add("hidden");
-      document.getElementById("tab-transcript").classList.remove("border-blue-600", "text-blue-600");
-      document.getElementById("tab-summary").classList.remove("border-blue-600", "text-blue-600");
-
-      if (tabName === "transcript") {
-        document.getElementById("content-transcript").classList.remove("hidden");
-        document.getElementById("tab-transcript").classList.add("border-blue-600", "text-blue-600");
-      } else {
-        document.getElementById("content-summary").classList.remove("hidden");
-        document.getElementById("tab-summary").classList.add("border-blue-600", "text-blue-600");
-      }
-    }
-  </script>
 </body>
 </html>
