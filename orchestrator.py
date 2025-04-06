@@ -2,7 +2,6 @@
 
 import os
 import logging
-from generate_audio import transcribe_audio
 from topic_processor import extract_topics
 from education_expert import analyze_student_performance
 from build_medrag_index import query_medrag
