@@ -1,100 +1,68 @@
-# podcast_script_generator.py
-
 import os
-import sys
-import openai
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
 
-# Set API key from environment
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("❌ OPENAI_API_KEY not found in environment.")
+# Generate a script for a single topic using student context + facts
+def generate_script(topic, opportunities_text, facts_text):
+    prompt = ChatPromptTemplate.from_template("""
+    You are a medical education podcast host. Your task is to teach the topic: "{topic}"
+    to a student who recently completed a study session. 
 
-openai.api_key = api_key
+    First, consider the student's performance summary (opportunities).
+    Then, reference the medically accurate facts (below) to ensure you're not hallucinating.
 
-def load_file(path):
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f"❌ File not found: {path}")
-    with open(path, 'r') as f:
-        return f.read()
+    Deliver a 2-5 minute educational segment (~300-600 words) that's:
+    - Clear and efficient
+    - Friendly but not overly casual
+    - Avoids repetition or tangents
+    - Covers the core info relevant to this student's needs
 
-def split_text(text, max_tokens=1500, overlap=100):
-    words = text.split()
-    chunks = []
-    start = 0
+    STUDENT'S PERFORMANCE NOTES:
+    {opportunities}
 
-    while start < len(words):
-        end = min(len(words), start + max_tokens)
-        chunk = " ".join(words[start:end])
-        chunks.append(chunk)
-        start = end - overlap  # Overlap for continuity
+    FACTUAL CONTEXT (from trusted medical sources):
+    {facts}
 
-    return chunks
+    Begin your podcast segment script now:
+    """)
+    
+    llm = ChatOpenAI(temperature=0.5, model="gpt-4")
+    chain = prompt | llm
+    response = chain.invoke({
+        "topic": topic,
+        "opportunities": opportunities_text,
+        "facts": facts_text
+    })
+    return response.content.strip()
 
-def generate_script_chunk(chunk):
-    prompt = f"""
-You are a professional podcast scriptwriter. Your task is to create a structured, engaging, and informative script for a single-person podcast. Use a warm and helpful tone, and organize the material with clear headings:
+# Orchestrate per-topic script generation
+def generate_all_scripts(session_dir):
+    topics_file = os.path.join(session_dir, "topics.txt")
+    topics_dir = os.path.join(session_dir, "topics")
+    output_dir = os.path.join(session_dir, "scripts")
+    os.makedirs(output_dir, exist_ok=True)
 
-# Strengths
-# Areas for Improvement
-# Medical Reinforcement Content
+    with open(topics_file, "r", encoding="utf-8") as f:
+        topics = [line.strip() for line in f if line.strip()]
 
-Focus on clinical relevance, study advice, and emotional encouragement.
+    with open(os.path.join(session_dir, "opportunities.txt"), "r", encoding="utf-8") as f:
+        opportunities_text = f.read()
 
-Content to include:
-{chunk}
-"""
-    try:
-        print("🧠 Sending chunk to OpenAI...")
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Or "o3-mini" if that's your target
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-        return response['choices'][0]['message']['content']
-    except Exception as e:
-        print(f"❌ Error in OpenAI request: {e}")
-        return f"[ERROR IN THIS SECTION: {e}]"
+    for topic in topics:
+        facts_path = os.path.join(topics_dir, f"{topic.replace(' ', '_')}_facts.txt")
+        if not os.path.exists(facts_path):
+            print(f"[WARN] Missing facts for topic: {topic}")
+            continue
 
-def main():
-    if len(sys.argv) < 3:
-        print("❌ Usage: python3 podcast_script_generator.py <education_path> <medical_path>")
-        sys.exit(1)
+        with open(facts_path, "r", encoding="utf-8") as f:
+            facts_text = f.read()
 
-    education_path = sys.argv[1]
-    medical_path = sys.argv[2]
+        print(f"[INFO] Generating script for topic: {topic}")
+        script = generate_script(topic, opportunities_text, facts_text)
 
-    try:
-        print(f"📖 Loading education expert analysis: {education_path}")
-        education_text = load_file(education_path)
+        script_path = os.path.join(output_dir, f"{topic.replace(' ', '_')}.txt")
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(script)
 
-        print(f"📖 Loading medical expert content: {medical_path}")
-        medical_text = load_file(medical_path)
-
-        # Combine content
-        combined = f"# Education Analysis\n\n{education_text}\n\n# Medical Expert Content\n\n{medical_text}"
-        chunks = split_text(combined)
-        print(f"🔍 Split into {len(chunks)} chunks")
-
-        all_script_parts = []
-        for idx, chunk in enumerate(chunks):
-            print(f"▶️ Processing chunk {idx + 1} of {len(chunks)}")
-            part = generate_script_chunk(chunk)
-            all_script_parts.append(part)
-            print(f"✅ Chunk {idx + 1} complete")
-
-        full_script = "\n\n---\n\n".join(all_script_parts)
-
-        base_name = os.path.splitext(os.path.basename(education_path))[0].replace("_education_expert_analysis", "")
-        output_path = os.path.join(os.path.dirname(education_path), f"{base_name}_podcast_script.txt")
-
-        with open(output_path, 'w') as f:
-            f.write(full_script)
-
-        print(f"✅ Saved podcast script to: {output_path}")
-
-    except Exception as e:
-        print(f"❌ General error: {e}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+    print(f"[INFO] All topic scripts written to: {output_dir}")
+    return output_dir
