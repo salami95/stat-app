@@ -1,99 +1,70 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
-import io
-import subprocess
+from flask import Flask, request, redirect, render_template, session, url_for
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 import uuid
-from contextlib import redirect_stdout
 
+# Import pipeline modules
+from orchestrator import orchestrate_initial_phase
+from topic_processor import process_topics
+from podcast_script_generator import generate_all_scripts
+from generate_audio import generate_all_audio
+
+# === INIT APP ===
+load_dotenv()
 app = Flask(__name__)
-UPLOAD_FOLDER = '/home/salami95/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure upload folder exists
+app.secret_key = os.getenv("FLASK_SECRET", "dev-key")  # Replace in production
+UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route('/')
+# === ROUTES ===
+
+@app.route("/", methods=["GET"])
 def welcome():
-    return render_template('welcome.html')
+    return render_template("welcome.html")
 
-@app.route('/upload', methods=['POST'])
+@app.route("/upload", methods=["POST"])
 def upload():
-    if 'audio' not in request.files:
-        return 'No audio file provided', 400
+    # 1. Save audio file
+    audio = request.files["audio"]
+    if not audio:
+        return "No audio file uploaded", 400
 
-    audio = request.files['audio']
-    if audio.filename == '':
-        return 'No selected file', 400
-
-    original_filename = os.path.splitext(audio.filename)[0]
-    unique_id = uuid.uuid4().hex[:8]
-    base_name = f"{original_filename}_{unique_id}"
-
-    audio_filename = f"{base_name}{os.path.splitext(audio.filename)[1]}"
-    audio_path = os.path.join(app.config['UPLOAD_FOLDER'], audio_filename)
+    filename = secure_filename(audio.filename)
+    uid = str(uuid.uuid4())[:8]
+    audio_path = os.path.join(UPLOAD_FOLDER, f"{uid}_{filename}")
     audio.save(audio_path)
 
-    return redirect(url_for('processing', base=base_name))
+    # 2. Run Orchestrator Phases
+    pipeline = orchestrate_initial_phase(audio_path)
+    topics_file, facts_dir = process_topics(
+        transcription_path=pipeline["transcription_path"],
+        opportunities_path=pipeline["opportunities_path"],
+        session_dir=pipeline["session_dir"]
+    )
+    scripts_dir = generate_all_scripts(pipeline["session_dir"])
+    generate_all_audio(pipeline["session_dir"])
 
-@app.route('/processing')
-def processing():
-    base_name = request.args.get('base')
-    if not base_name:
-        return "Missing session base name.", 400
+    # 3. Load everything into session
+    topics = []
+    scripts = {}
 
-    transcription_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_transcription.txt")
+    with open(topics_file, "r", encoding="utf-8") as f:
+        topics = [line.strip() for line in f if line.strip()]
 
-    buffer = io.StringIO()
-    with redirect_stdout(buffer):
-        try:
-            print(f"🟡 Processing session: {base_name}")
+    for topic in topics:
+        topic_file = os.path.join(scripts_dir, f"{topic.replace(' ', '_')}.txt")
+        if os.path.exists(topic_file):
+            with open(topic_file, "r", encoding="utf-8") as f:
+                scripts[topic] = f.read()
 
-            # STEP 1: Simulate transcription
-            with open(transcription_path, 'w') as f:
-                f.write("Simulated transcription from audio...")
-            print(f"✅ Transcription saved: {transcription_path}")
+    session["topics"] = topics
+    session["scripts"] = scripts
+    session["session_dir"] = pipeline["session_dir"].split("/")[-1]  # For static path
 
-            # STEP 2: Education expert
-            print("▶️ Running education_expert.py...")
-            subprocess.run(['python3', 'education_expert.py', transcription_path], check=True)
+    return redirect(url_for("results"))
 
-            education_output = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_education_expert_analysis.txt")
+@app.route("/results", methods=["GET"])
+def results():
+    return render_template("results.html")
 
-            # STEP 3: Medical expert
-            print("▶️ Running medical_expert.py...")
-            subprocess.run(['python3', 'medical_expert.py', transcription_path, education_output], check=True)
-
-            medical_output = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_medical_expert_analysis.txt")
-            if not os.path.exists(medical_output):
-                raise FileNotFoundError(f"{medical_output} not found after script.")
-
-            # STEP 4: Podcast script generator
-            print("▶️ Running podcast_script_generator.py...")
-            subprocess.run([
-                'python3', 'podcast_script_generator.py',
-                education_output, medical_output
-            ], check=True)
-
-            script_output = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_podcast_script.txt")
-            if not os.path.exists(script_output):
-                raise FileNotFoundError(f"{script_output} not found after script.")
-
-            # STEP 5: Eleven Labs TTS
-            print("▶️ Running eleven_labs_scribe.py...")
-            subprocess.run([
-                'python3', 'eleven_labs_scribe.py',
-                script_output, base_name
-            ], check=True)
-
-            print("✅ All processing steps completed successfully!")
-
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Subprocess failed: {e}")
-        except Exception as e:
-            print(f"❌ General error: {e}")
-
-    output = buffer.getvalue()
-    return render_template('processing.html', log_output=output)
-
-if __name__ == '__main__':
-    app.run(debug=True)
