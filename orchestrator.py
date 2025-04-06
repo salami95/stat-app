@@ -1,56 +1,60 @@
-import os
-import time
-from eleven_labs_scribe import transcribe_audio
-from education_expert import analyze_transcript
+import logging
+from generate_audio import transcribe_audio
+from topic_processor import extract_topics
+from build_medrag_index import query_medrag
+from education_expert import analyze_student_performance
+from medical_expert import generate_clarified_explanations
+from podcast_script_generator import generate_podcast_script
+from eleven_labs_scribe import generate_audio_narration
 
-# Step 1: Create timestamped output directory for this session
-def create_session_dir(base_path="outputs"):
-    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-    session_dir = os.path.join(base_path, timestamp)
-    os.makedirs(session_dir, exist_ok=True)
-    return session_dir
+logger = logging.getLogger(__name__)
 
-# Step 2: Transcribe uploaded audio file
-def run_transcription(audio_path, session_dir):
-    transcription_output_path = os.path.join(session_dir, "raw_transcription.txt")
-    transcription = transcribe_audio(audio_path)
-    with open(transcription_output_path, "w", encoding="utf-8") as f:
-        f.write(transcription)
-    return transcription_output_path
-
-# Step 3: Analyze transcript with education expert prompt
-def run_education_analysis(transcription_path, session_dir):
-    with open(transcription_path, "r", encoding="utf-8") as f:
-        transcript = f.read()
-    opportunities_output_path = os.path.join(session_dir, "opportunities.txt")
-    analysis = analyze_transcript(transcript)
-    with open(opportunities_output_path, "w", encoding="utf-8") as f:
-        f.write(analysis)
-    return opportunities_output_path
-
-# Master function for Step 1
 def orchestrate_initial_phase(audio_path):
-    print(f"[INFO] Starting pipeline for: {audio_path}")
-    session_dir = create_session_dir()
-    print(f"[INFO] Session directory: {session_dir}")
+    try:
+        logger.info("Starting transcription...")
+        transcript = transcribe_audio(audio_path)
+        logger.info("Transcription complete.")
 
-    transcription_path = run_transcription(audio_path, session_dir)
-    print(f"[INFO] Transcription saved at: {transcription_path}")
+        logger.info("Extracting topics...")
+        topics = extract_topics(transcript)
+        logger.info(f"Topics extracted: {topics}")
 
-    opportunities_path = run_education_analysis(transcription_path, session_dir)
-    print(f"[INFO] Opportunities saved at: {opportunities_path}")
+        logger.info("Querying MedRAG for each topic...")
+        grounded_info = {
+            topic: query_medrag(topic) for topic in topics
+        }
+        logger.info("MedRAG grounding complete.")
 
-    return {
-        "session_dir": session_dir,
-        "transcription_path": transcription_path,
-        "opportunities_path": opportunities_path
-    }
+        logger.info("Analyzing student performance...")
+        performance_report = analyze_student_performance(transcript)
+        logger.info("Performance analysis complete.")
 
-# CLI runner (optional if calling manually)
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) < 2:
-        print("Usage: python orchestrator.py path/to/audio/file.mp3")
-    else:
-        audio_file = sys.argv[1]
-        orchestrate_initial_phase(audio_file)
+        logger.info("Generating expert explanations...")
+        expert_explanations = {
+            topic: generate_clarified_explanations(topic, grounded_info[topic]) for topic in topics
+        }
+        logger.info("Explanations complete.")
+
+        logger.info("Generating podcast scripts...")
+        scripts = {
+            topic: generate_podcast_script(topic, expert_explanations[topic]) for topic in topics
+        }
+        logger.info("Scripts generated.")
+
+        logger.info("Generating audio narrations...")
+        audio_files = {
+            topic: generate_audio_narration(topic, scripts[topic]) for topic in topics
+        }
+        logger.info("Audio narration complete.")
+
+        return {
+            "transcript": transcript,
+            "topics": topics,
+            "performance_report": performance_report,
+            "scripts": scripts,
+            "audio_files": audio_files,
+        }
+
+    except Exception as e:
+        logger.error(f"Error during orchestration: {e}", exc_info=True)
+        raise
