@@ -10,13 +10,15 @@ if not api_key:
 
 openai.api_key = api_key
 
-def load_file(filepath):
+
+def load_file(filepath: str) -> str:
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"❌ File not found: {filepath}")
     with open(filepath, 'r') as f:
         return f.read()
 
-def split_transcription(text, max_tokens=1500, overlap=100):
+
+def split_transcription(text: str, max_tokens: int = 1500, overlap: int = 100) -> list:
     words = text.split()
     chunks = []
     start = 0
@@ -25,15 +27,23 @@ def split_transcription(text, max_tokens=1500, overlap=100):
         end = min(len(words), start + max_tokens)
         chunk = " ".join(words[start:end])
         chunks.append(chunk)
-        start = end - overlap  # move back for overlap
+        start = end - overlap
 
     return chunks
 
-def generate_response(chunk):
-    prompt = f"""
-You are a medical expert with deep understanding of the complexities of medicine. Below is a transcription of a medical student's study session that outlines pitfalls, mistakes, and gaps in knowledge. Your task is to supply detailed, comprehensive information addressing these gaps, ensuring the student has all the necessary content to answer similar questions correctly in the future. Additionally, reinforce the topics the student answered correctly to aid in spaced repetition as the student will be reviewing the content you provide on a regular basis to remind themselves of topics they have covered. Deliver your response as plain text with no extra formatting.
 
-Transcription:
+def generate_response(chunk: str) -> str:
+    prompt = f"""
+You are a medical expert with deep understanding of clinical and scientific medicine. Below is a transcription of a medical student's study session, including analysis of their learning gaps and strengths. 
+
+Your task is to:
+1. Clarify misunderstood or incomplete concepts using accurate, detailed medical information.
+2. Reinforce correct information for spaced repetition.
+3. Avoid excessive verbosity—focus on educational impact.
+
+Return your answer as plain text with no extra formatting.
+
+Content:
 {chunk}
 """
     try:
@@ -48,8 +58,9 @@ Transcription:
         print(f"❌ Error during OpenAI API call: {e}")
         return f"[Error processing this chunk: {e}]"
 
-# ✅ New: function for orchestrator.py compatibility
-def generate_clarified_explanations(transcription_path, education_path):
+
+# ✅ Exposed function for orchestration
+def generate_clarified_explanations(transcription_path: str, education_path: str) -> str:
     print(f"📄 Loading transcription from: {transcription_path}")
     transcription_text = load_file(transcription_path)
 
@@ -68,6 +79,7 @@ def generate_clarified_explanations(transcription_path, education_path):
         print(f"✅ Finished chunk {idx + 1}")
 
     return "\n\n---\n\n".join(results)
+
 
 def main():
     if len(sys.argv) < 3:
@@ -91,6 +103,7 @@ def main():
     except Exception as e:
         print(f"❌ General error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
