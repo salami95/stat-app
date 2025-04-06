@@ -1,42 +1,48 @@
+# podcast_script_generator.py
+
 import os
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
-# Generate a script for a single topic using student context + facts
-def generate_script(topic, opportunities_text, facts_text):
+
+# Generate a script for a single topic using student context + grounded facts
+def generate_script(topic: str, opportunities_text: str, facts_text: str) -> str:
     prompt = ChatPromptTemplate.from_template("""
-    You are a medical education podcast host. Your task is to teach the topic: "{topic}"
-    to a student who recently completed a study session. 
+You are the host of a medical education podcast. Your job is to teach the topic: "{topic}" to a student who recently completed a self-guided study session.
 
-    First, consider the student's performance summary (opportunities).
-    Then, reference the medically accurate facts (below) to ensure you're not hallucinating.
+Use the student's performance summary to guide tone and focus. Then use the factual context to build your episode. Avoid hallucinations. Do not include information not found in the factual context.
 
-    Deliver a 2-5 minute educational segment (~300-600 words) that's:
-    - Clear and efficient
-    - Friendly but not overly casual
-    - Avoids repetition or tangents
-    - Covers the core info relevant to this student's needs
+Create a 2–5 minute segment (~300–600 words) that is:
+- Friendly but focused
+- Clear, concise, and medically accurate
+- Structured with a brief intro, core teaching, and a single key takeaway
+- Designed for students reviewing high-yield content for exams
 
-    STUDENT'S PERFORMANCE NOTES:
-    {opportunities}
+STUDENT PERFORMANCE NOTES:
+{opportunities}
 
-    FACTUAL CONTEXT (from trusted medical sources):
-    {facts}
+FACTUAL CONTEXT (trusted RAG output):
+{facts}
 
-    Begin your podcast segment script now:
-    """)
-    
+Start your segment below:
+""")
+
     llm = ChatOpenAI(temperature=0.5, model="gpt-4")
     chain = prompt | llm
+
     response = chain.invoke({
         "topic": topic,
         "opportunities": opportunities_text,
         "facts": facts_text
     })
-    return response.content.strip()
 
-# Orchestrate per-topic script generation
-def generate_all_scripts(session_dir):
+    output = response.content.strip()
+    print(f"[LENGTH] Script for '{topic}' is {len(output.split())} words")
+    return output
+
+
+# Orchestrate per-topic podcast generation
+def generate_all_scripts(session_dir: str) -> str:
     topics_file = os.path.join(session_dir, "topics.txt")
     topics_dir = os.path.join(session_dir, "topics")
     output_dir = os.path.join(session_dir, "scripts")
@@ -67,5 +73,6 @@ def generate_all_scripts(session_dir):
     print(f"[INFO] All topic scripts written to: {output_dir}")
     return output_dir
 
-# Alias for orchestrator compatibility
+
+# Compatibility alias for orchestrator.py
 generate_podcast_script = generate_all_scripts
