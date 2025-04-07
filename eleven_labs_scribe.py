@@ -2,8 +2,10 @@
 
 import os
 from io import BytesIO
-from elevenlabs import Scribe
+from dotenv import load_dotenv
+from elevenlabs.client import ElevenLabs
 
+load_dotenv()
 
 def transcribe_audio(audio_path: str) -> str:
     """
@@ -14,7 +16,7 @@ def transcribe_audio(audio_path: str) -> str:
     if not api_key:
         raise ValueError("❌ ELEVENLABS_API_KEY not set in environment variables.")
 
-    scribe = Scribe(api_key=api_key)
+    client = ElevenLabs(api_key=api_key)
 
     try:
         with open(audio_path, "rb") as audio_file:
@@ -22,16 +24,20 @@ def transcribe_audio(audio_path: str) -> str:
 
         print(f"🎧 Transcribing audio from {audio_path}...")
 
-        result = scribe.transcribe(
-            audio=audio_data,
-            model="scribe-v1",
-            diarize=True,
-            summarize=False
+        result = client.speech_to_text.convert(
+            file=audio_data,
+            model_id="scribe_v1",
+            tag_audio_events=True,
+            language_code="eng",
+            diarize=True
         )
 
         print("✅ Transcription complete.")
-        print(f"🗣️ Speakers detected: {len(set([seg['speaker'] for seg in result.segments]))}")
-        print(f"📝 Total segments: {len(result.segments)}")
+        if hasattr(result, "segments"):
+            print(f"🗣️ Speakers detected: {len(set([seg['speaker'] for seg in result.segments]))}")
+            print(f"📝 Total segments: {len(result.segments)}")
+        else:
+            print("ℹ️ Segment data not available in result.")
 
         return result.text
 
