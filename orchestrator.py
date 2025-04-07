@@ -23,14 +23,6 @@ def run_phase_1(audio_path):
             f.write(transcript)
         logger.info(f"✅ Transcript saved to {transcript_path}")
 
-        logger.info("🧠 Extracting topics...")
-        topics = extract_topics(transcript)
-        topics_path = os.path.join(session_dir, "topics.txt")
-        with open(topics_path, "w", encoding="utf-8") as f:
-            for topic in topics:
-                f.write(topic + "\n")
-        logger.info(f"✅ Topics saved to {topics_path}")
-
         logger.info("📊 Analyzing student performance...")
         performance_report = analyze_student_performance(transcript)
         opportunities_path = os.path.join(session_dir, "opportunities.txt")
@@ -38,6 +30,14 @@ def run_phase_1(audio_path):
             for opp in performance_report["opportunities"]:
                 f.write(f"[{opp['severity'].upper()}] {opp['topic']}: {opp['description']}\n")
         logger.info(f"✅ Opportunities saved to {opportunities_path}")
+
+        logger.info("🧠 Extracting topics...")
+        topics = extract_topics(transcript, performance_report["opportunities"])
+        topics_path = os.path.join(session_dir, "topics.txt")
+        with open(topics_path, "w", encoding="utf-8") as f:
+            for topic in topics:
+                f.write(topic + "\n")
+        logger.info(f"✅ Topics saved to {topics_path}")
 
         return {
             "session_dir": session_dir,
@@ -100,5 +100,5 @@ def run_phase_2(session_dir):
         raise
 
 
-# ✅ Provide compatibility alias for app.py
+# Compatibility for app.py
 orchestrate_initial_phase = run_phase_1
