@@ -6,6 +6,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain.chains import RetrievalQA
 
+
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
     prompt = ChatPromptTemplate.from_template("""
@@ -29,11 +30,13 @@ def extract_topics(transcript: str, opportunities: str) -> list:
     response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
     return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
 
+
 # 2. Load MedRAG index for RAG-based enrichment
 def load_medrag_vectorstore(index_path="rag/medrag_index"):
     embeddings = HuggingFaceEmbeddings()
     vectorstore = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
     return vectorstore
+
 
 # 3. Retrieve RAG facts for each topic
 def retrieve_facts_for_topics(topics, vectorstore, session_dir):
@@ -50,6 +53,7 @@ def retrieve_facts_for_topics(topics, vectorstore, session_dir):
             f.write(response)
 
     return facts_dir
+
 
 # 4. Orchestrate entire process
 def process_topics(transcription_path, opportunities_path, session_dir):
