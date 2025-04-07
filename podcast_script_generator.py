@@ -1,7 +1,7 @@
 # podcast_script_generator.py
 
 import os
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
 
