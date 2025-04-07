@@ -1,9 +1,10 @@
+# topic_processor.py
+
 import os
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.document_loaders import TextLoader
 from langchain.chains import RetrievalQA
 
 
@@ -24,8 +25,8 @@ def extract_topics(transcript: str, opportunities: str) -> list:
 
     Topics:
     """)
-    
-    llm = ChatOpenAI(temperature=0.2, model="gpt-4")
+
+    llm = ChatOpenAI(model="gpt-4", temperature=0.2)
     chain = prompt | llm
     response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
     return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
@@ -55,7 +56,7 @@ def retrieve_facts_for_topics(topics, vectorstore, session_dir):
     return facts_dir
 
 
-# 4. Orchestrate entire process
+# 4. Orchestrate topic extraction + RAG enrichment
 def process_topics(transcription_path, opportunities_path, session_dir):
     with open(transcription_path, "r", encoding="utf-8") as f:
         transcript = f.read()
@@ -68,7 +69,6 @@ def process_topics(transcription_path, opportunities_path, session_dir):
     topics_file = os.path.join(session_dir, "topics.txt")
     with open(topics_file, "w", encoding="utf-8") as f:
         f.write("\n".join(topics))
-
     print(f"[INFO] Topics extracted and saved to {topics_file}")
 
     print("[INFO] Loading MedRAG vectorstore...")
