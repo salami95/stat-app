@@ -5,14 +5,14 @@ import sys
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 
 
 def load_file(filepath: str) -> str:
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"❌ File not found: {filepath}")
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
 
@@ -29,8 +29,8 @@ def generate_clarified_explanations(transcription_path: str, education_path: str
     print("📦 Loading MedRAG FAISS index...")
     retriever = FAISS.load_local(
         "./rag/medrag_index",
-        OpenAIEmbeddings(),
-        index_name="index"
+        HuggingFaceEmbeddings(),
+        allow_dangerous_deserialization=True
     ).as_retriever()
 
     # Construct the RAG prompt
@@ -80,7 +80,7 @@ def main():
         base_name = os.path.splitext(os.path.basename(transcription_path))[0].replace("_transcription", "")
         output_path = os.path.join(os.path.dirname(transcription_path), f"{base_name}_medical_expert_analysis.txt")
 
-        with open(output_path, 'w') as f:
+        with open(output_path, 'w', encoding='utf-8') as f:
             f.write(final_output)
 
         print(f"✅ Saved medical expert analysis to: {output_path}")
