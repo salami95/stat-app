@@ -6,7 +6,7 @@ langchain-core>=0.1.30
 langchain-community>=0.0.20
 llama-index==0.10.22
 faiss-cpu
-elevenlabs==1.2.2
+elevenlabs>=1.3.0
 pydub==0.25.1
 requests==2.31.0
 python-dotenv==1.0.1
