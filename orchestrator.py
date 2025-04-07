@@ -1,5 +1,3 @@
-# orchestrator.py
-
 import os
 import logging
 from eleven_labs_scribe import transcribe_audio
@@ -100,3 +98,7 @@ def run_phase_2(session_dir):
     except Exception as e:
         logger.error(f"❌ Phase 2 failed: {e}", exc_info=True)
         raise
+
+
+# ✅ Provide compatibility alias for app.py
+orchestrate_initial_phase = run_phase_1
