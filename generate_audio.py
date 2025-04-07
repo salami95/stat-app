@@ -1,4 +1,4 @@
-# audio_generator.py
+# generate_audio.py
 
 import os
 from dotenv import load_dotenv
@@ -41,3 +41,7 @@ def generate_audio_narration(topic: str, script_text: str, output_path: str = No
 
     print(f"✅ Audio narration saved to {output_path}")
     return output_path
+
+
+# ✅ Compatibility alias for app.py
+generate_all_audio = generate_audio_narration
