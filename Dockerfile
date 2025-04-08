@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y ffmpeg gcc && rm -rf /var/lib/apt/lists
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir --upgrade openai==1.17.0
+    pip install --no-cache-dir --upgrade openai==1.17.0 langchain==0.1.16
+
 
 # Copy project files
 COPY . /app/
