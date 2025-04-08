@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 # 👇 This line goes BEFORE any COPY/RUN so it busts cache
-ARG CACHEBUSTER=1
+ARG CACHEBUSTER=2
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
