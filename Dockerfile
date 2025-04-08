@@ -1,6 +1,9 @@
 # Use an official lightweight Python image
 FROM python:3.12-slim
 
+# 👇 This line goes BEFORE any COPY/RUN so it busts cache
+ARG CACHEBUSTER=1
+
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
