@@ -6,6 +6,10 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
+import langchain_core
+
+# Optional: Prevent any global proxies injection from settings
+langchain_core.settings.settings.update(proxies=None)
 
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
@@ -28,11 +32,12 @@ def extract_topics(transcript: str, opportunities: str) -> list:
     llm = ChatOpenAI(
         model="gpt-4",
         temperature=0.2,
-        api_key=os.getenv("OPENAI_API_KEY")  # ✅ Corrected usage
+        openai_api_key=os.getenv("OPENAI_API_KEY")  # Correct param for langchain-openai
     )
     chain = prompt | llm
     response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
     return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
+
 
 # 2. Load MedRAG index for RAG-based enrichment
 def load_medrag_vectorstore(index_path="rag/medrag_index"):
@@ -40,13 +45,14 @@ def load_medrag_vectorstore(index_path="rag/medrag_index"):
     vectorstore = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
     return vectorstore
 
+
 # 3. Retrieve RAG facts for each topic
 def retrieve_facts_for_topics(topics, vectorstore, session_dir):
     retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
     llm = ChatOpenAI(
         model="gpt-4",
         temperature=0.2,
-        api_key=os.getenv("OPENAI_API_KEY")  # ✅ Corrected usage here too
+        openai_api_key=os.getenv("OPENAI_API_KEY")
     )
     qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
@@ -60,6 +66,7 @@ def retrieve_facts_for_topics(topics, vectorstore, session_dir):
             f.write(response)
 
     return facts_dir
+
 
 # 4. Orchestrate topic extraction + RAG enrichment
 def process_topics(transcription_path, opportunities_path, session_dir):
