@@ -3,7 +3,7 @@ gunicorn==21.2.0
 openai
 langchain==0.1.16
 langchain-core==0.1.43
-langchain-community==0.0.21
+langchain-community==0.0.35
 langchain-openai==0.0.8
 llama-index==0.10.22
 faiss-cpu
