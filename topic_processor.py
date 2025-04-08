@@ -7,7 +7,6 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
 
-
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
     prompt = ChatPromptTemplate.from_template("""
@@ -26,11 +25,14 @@ def extract_topics(transcript: str, opportunities: str) -> list:
     Topics:
     """)
 
-    llm = ChatOpenAI(model="gpt-4", temperature=0.2, openai_api_key=os.getenv("OPENAI_API_KEY"))
+    llm = ChatOpenAI(
+        model="gpt-4",
+        temperature=0.2,
+        config={"api_key": os.getenv("OPENAI_API_KEY")}
+    )
     chain = prompt | llm
     response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
     return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
-
 
 # 2. Load MedRAG index for RAG-based enrichment
 def load_medrag_vectorstore(index_path="rag/medrag_index"):
@@ -38,15 +40,15 @@ def load_medrag_vectorstore(index_path="rag/medrag_index"):
     vectorstore = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
     return vectorstore
 
-
 # 3. Retrieve RAG facts for each topic
 def retrieve_facts_for_topics(topics, vectorstore, session_dir):
     retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY")),
-        retriever=retriever
+    llm = ChatOpenAI(
+        model="gpt-4",
+        temperature=0.2,
+        config={"api_key": os.getenv("OPENAI_API_KEY")}
     )
-
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
     facts_dir = os.path.join(session_dir, "topics")
     os.makedirs(facts_dir, exist_ok=True)
@@ -58,7 +60,6 @@ def retrieve_facts_for_topics(topics, vectorstore, session_dir):
             f.write(response)
 
     return facts_dir
-
 
 # 4. Orchestrate topic extraction + RAG enrichment
 def process_topics(transcription_path, opportunities_path, session_dir):
