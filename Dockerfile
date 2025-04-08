@@ -22,4 +22,4 @@ COPY . /app/
 EXPOSE 8080
 
 # Start the app
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "180", "app:app"]
