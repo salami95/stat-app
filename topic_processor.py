@@ -8,9 +8,6 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
 import langchain_core
 
-# Optional: Prevent any global proxies injection from settings
-langchain_core.settings.settings.update(proxies=None)
-
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
     prompt = ChatPromptTemplate.from_template("""
