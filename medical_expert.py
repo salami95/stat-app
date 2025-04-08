@@ -21,7 +21,6 @@ def generate_clarified_explanations(transcription_path: str, education_path: str
     print(f"📄 Loading education expert analysis from: {education_path}")
     education_text = load_file(education_path)
 
-    # Combine transcript and education expert reflection
     combined_input = transcription_text + "\n\n# Education Analysis\n\n" + education_text
 
     print("📦 Loading MedRAG FAISS index...")
@@ -31,7 +30,6 @@ def generate_clarified_explanations(transcription_path: str, education_path: str
         allow_dangerous_deserialization=True
     ).as_retriever()
 
-    # Construct the RAG prompt
     prompt_template = PromptTemplate.from_template(
         """
 You are a medical expert with deep understanding of the complexities of medicine.
