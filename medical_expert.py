@@ -1,5 +1,3 @@
-# medical_expert.py
-
 import os
 import sys
 from langchain.chains import RetrievalQA
@@ -54,8 +52,14 @@ STUDENT STUDY SESSION:
     )
 
     print("🧠 Initializing LangChain RAG pipeline...")
+    llm = ChatOpenAI(
+        model="gpt-4",
+        temperature=0.7,
+        openai_api_key=os.getenv("OPENAI_API_KEY")
+    )
+
     qa_chain = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(model="gpt-4", temperature=0.7),
+        llm=llm,
         retriever=retriever,
         chain_type="stuff",
         chain_type_kwargs={"prompt": prompt_template}
