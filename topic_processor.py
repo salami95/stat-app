@@ -1,3 +1,6 @@
+print("✅ topic_processor.py loaded from:", __file__)
+
+
 import os
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -7,6 +10,16 @@ from langchain.chains import RetrievalQA
 
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
+    print("⚠️  Instantiating ChatOpenAI...")
+
+    llm = ChatOpenAI(
+        model="gpt-4",
+        temperature=0.2,
+        openai_api_key=os.getenv("OPENAI_API_KEY")
+    )
+
+    print("✅ ChatOpenAI initialized:", llm)
+
     prompt = ChatPromptTemplate.from_template("""
     You're a study assistant analyzing a student's study session.
     Given the transcript and analysis below, extract a list of discrete medical topics discussed.
@@ -23,11 +36,6 @@ def extract_topics(transcript: str, opportunities: str) -> list:
     Topics:
     """)
 
-    llm = ChatOpenAI(
-        model="gpt-4",
-        temperature=0.2,
-        openai_api_key=os.getenv("OPENAI_API_KEY")
-    )
     chain = prompt | llm
     response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
     return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
