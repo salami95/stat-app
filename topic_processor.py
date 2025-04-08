@@ -28,7 +28,7 @@ def extract_topics(transcript: str, opportunities: str) -> list:
     llm = ChatOpenAI(
         model="gpt-4",
         temperature=0.2,
-        config={"api_key": os.getenv("OPENAI_API_KEY")}
+        api_key=os.getenv("OPENAI_API_KEY")  # ✅ Corrected usage
     )
     chain = prompt | llm
     response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
@@ -46,7 +46,7 @@ def retrieve_facts_for_topics(topics, vectorstore, session_dir):
     llm = ChatOpenAI(
         model="gpt-4",
         temperature=0.2,
-        config={"api_key": os.getenv("OPENAI_API_KEY")}
+        api_key=os.getenv("OPENAI_API_KEY")  # ✅ Corrected usage here too
     )
     qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
