@@ -1,54 +1,86 @@
+# topic_processor.py
+
 import os
-import logging
-from eleven_labs_scribe import transcribe_audio
-from topic_processor import extract_topics
-from education_expert import analyze_student_performance
-from build_medrag_index import query_medrag
-from medical_expert import generate_clarified_explanations
-from podcast_script_generator import generate_script
-from generate_audio import generate_audio_narration
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.chains import RetrievalQA
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+# 1. Extract topics using LLM
+def extract_topics(transcript: str, opportunities: str) -> list:
+    prompt = ChatPromptTemplate.from_template("""
+    You're a study assistant analyzing a student's study session.
+    Given the transcript and analysis below, extract a list of discrete medical topics discussed.
+    - Keep topics concise (e.g., 'psoriasis', 'types of skin cancer', 'histamine signaling')
+    - Avoid duplications or overly broad groupings
+    - Return one topic per line, no numbering
 
-def run_phase_1(audio_path):
-    try:
-        session_dir = os.path.dirname(audio_path)
-        base_name = os.path.splitext(os.path.basename(audio_path))[0].replace("_audio", "")
+    Transcript:
+    {transcript}
 
-        logger.info("🎙️ Transcribing audio...")
-        transcript = transcribe_audio(audio_path)
-        transcript_path = os.path.join(session_dir, f"{base_name}_transcript.txt")
-        with open(transcript_path, "w", encoding="utf-8") as f:
-            f.write(transcript)
-        logger.info(f"✅ Transcript saved to {transcript_path}")
+    Expert Analysis:
+    {opportunities}
 
-        logger.info("📊 Analyzing student performance...")
-        performance_report = analyze_student_performance(transcript)
-        opportunities_path = os.path.join(session_dir, "opportunities.txt")
-        with open(opportunities_path, "w", encoding="utf-8") as f:
-            f.write(performance_report)
-        logger.info(f"✅ Opportunities saved to {opportunities_path}")
+    Topics:
+    """)
 
-        logger.info("🧠 Extracting topics...")
-        topics = extract_topics(transcript, performance_report)
-        topics_path = os.path.join(session_dir, "topics.txt")
-        with open(topics_path, "w", encoding="utf-8") as f:
-            for topic in topics:
-                f.write(topic + "\n")
-        logger.info(f"✅ Topics saved to {topics_path}")
+    llm = ChatOpenAI(
+        model="gpt-4",
+        temperature=0.2,
+        openai_api_key=os.getenv("OPENAI_API_KEY")  # ✅ works with langchain-openai 0.0.8
+    )
+    chain = prompt | llm
+    response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
+    return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
 
-        return {
-            "session_dir": session_dir,
-            "transcript_path": transcript_path,
-            "topics_path": topics_path,
-            "opportunities_path": opportunities_path,
-        }
+# 2. Load MedRAG index for RAG-based enrichment
+def load_medrag_vectorstore(index_path="rag/medrag_index"):
+    embeddings = HuggingFaceEmbeddings()
+    vectorstore = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
+    return vectorstore
 
-    except Exception as e:
-        logger.error(f"❌ Phase 1 failed: {e}", exc_info=True)
-        raise
+# 3. Retrieve RAG facts for each topic
+def retrieve_facts_for_topics(topics, vectorstore, session_dir):
+    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+    llm = ChatOpenAI(
+        model="gpt-4",
+        temperature=0.2,
+        openai_api_key=os.getenv("OPENAI_API_KEY")  # ✅ also correct here
+    )
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
+    facts_dir = os.path.join(session_dir, "topics")
+    os.makedirs(facts_dir, exist_ok=True)
 
-# Compatibility for app.py
-orchestrate_initial_phase = run_phase_1
+    for topic in topics:
+        response = qa_chain.run(f"Provide accurate, concise educational content on: {topic}")
+        path = os.path.join(facts_dir, f"{topic.replace(' ', '_')}_facts.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(response)
+
+    return facts_dir
+
+# 4. Orchestrate topic extraction + RAG enrichment
+def process_topics(transcription_path, opportunities_path, session_dir):
+    with open(transcription_path, "r", encoding="utf-8") as f:
+        transcript = f.read()
+    with open(opportunities_path, "r", encoding="utf-8") as f:
+        opportunities = f.read()
+
+    print("[INFO] Extracting topics...")
+    topics = extract_topics(transcript, opportunities)
+
+    topics_file = os.path.join(session_dir, "topics.txt")
+    with open(topics_file, "w", encoding="utf-8") as f:
+        f.write("\n".join(topics))
+    print(f"[INFO] Topics extracted and saved to {topics_file}")
+
+    print("[INFO] Loading MedRAG vectorstore...")
+    vectorstore = load_medrag_vectorstore()
+
+    print("[INFO] Retrieving facts for each topic...")
+    facts_dir = retrieve_facts_for_topics(topics, vectorstore, session_dir)
+
+    print(f"[INFO] Completed RAG enrichment. Facts saved in {facts_dir}")
+    return topics_file, facts_dir
