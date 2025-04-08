@@ -26,7 +26,7 @@ def extract_topics(transcript: str, opportunities: str) -> list:
     Topics:
     """)
 
-    llm = ChatOpenAI(model="gpt-4", temperature=0.2)
+    llm = ChatOpenAI(model="gpt-4", temperature=0.2, openai_api_key=os.getenv("OPENAI_API_KEY"))
     chain = prompt | llm
     response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
     return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
@@ -42,7 +42,11 @@ def load_medrag_vectorstore(index_path="rag/medrag_index"):
 # 3. Retrieve RAG facts for each topic
 def retrieve_facts_for_topics(topics, vectorstore, session_dir):
     retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
-    qa_chain = RetrievalQA.from_chain_type(llm=ChatOpenAI(model="gpt-4"), retriever=retriever)
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY")),
+        retriever=retriever
+    )
+
 
     facts_dir = os.path.join(session_dir, "topics")
     os.makedirs(facts_dir, exist_ok=True)
