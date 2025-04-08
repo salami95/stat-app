@@ -6,7 +6,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
-import langchain_core
+
 
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
