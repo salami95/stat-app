@@ -49,8 +49,8 @@ def process_audio_session(session_id, session_dir, transcript):
             print(f"[Orchestrator] Podcast script written.")
 
             # Text-to-speech synthesis
-            generate_audio_files(script, topic, audio_output_dir)
-            print(f"[Orchestrator] Audio file created for topic: {topic}")
+            # Audio generation temporarily disabled
+            print(f"[TTS] Skipped audio generation for topic: {topic}")
 
         print("[Orchestrator] All topics processed successfully.")
         return {
