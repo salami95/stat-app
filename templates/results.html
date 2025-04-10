@@ -24,11 +24,9 @@
       {% for topic in session.topics %}
         <div class="bg-white shadow rounded-lg p-6 mb-6">
           <h2 class="text-2xl font-semibold text-gray-800 mb-2">{{ topic }}</h2>
-          
-          <audio controls class="w-full mb-4">
-            <source src="{{ url_for('static', filename=session.session_dir + '/audio/' + topic.replace(' ', '_') + '.mp3') }}" type="audio/mpeg" />
-            Your browser does not support the audio element.
-          </audio>
+                      <!-- Audio generation disabled -->
+            <p class="text-sm text-gray-500 mb-2 italic">Audio not available yet.</p>
+
 
           <div class="border rounded p-4 bg-gray-50 text-sm text-gray-700 whitespace-pre-wrap">
             {{ session.scripts[topic] }}
