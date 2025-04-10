@@ -18,8 +18,9 @@ ARG CACHEBUSTER=5
 COPY requirements.txt /app/
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir --trusted-host pypi.org -r requirements.txt && \
-    pip install pipdeptree && pipdeptree | tee /tmp/deps.log && \
-    pip show pydantic && python -c "import pydantic; print('Using Pydantic:', pydantic.__version__)"
+    pip install pipdeptree && \
+    python -m pipdeptree | tee /tmp/deps.log && \
+    python -c "import pydantic; print('Using Pydantic:', pydantic.__version__)"
 
 
 # ✅ Preload HuggingFace model *after* installing packages
