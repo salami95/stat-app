@@ -22,5 +22,6 @@ datasets==2.18.0
 numpy==1.26.4
 ipykernel==6.29.4
 
-pydantic>=2.0
+pydantic==1.10.13
+
 
