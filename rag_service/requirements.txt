@@ -1,0 +1,3 @@
+flask
+llama-index==0.10.22
+faiss-cpu
