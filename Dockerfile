@@ -17,7 +17,8 @@ ARG CACHEBUSTER=5
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir --trusted-host pypi.org -r requirements.txt
+    pip install --no-cache-dir --trusted-host pypi.org -r requirements.txt \
+    pip install pipdeptree && pipdeptree | tee /tmp/deps.log
 
 # ✅ Preload HuggingFace model *after* installing packages
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-mpnet-base-v2')"
