@@ -9,6 +9,12 @@ import os
 app = Flask(__name__)
 llm = ChatOpenAI(model="gpt-4", temperature=0)
 
+# URLs for other services
+WHISPER_URL = os.getenv("WHISPER_URL", "http://whisperservice-production.up.railway.app:80")
+TOPIC_URL = os.getenv("TOPIC_URL", "http://topicservice-production.up.railway.app:80")
+RAG_URL = os.getenv("RAG_URL", "http://ragservice-production.up.railway.app:80")
+SCRIPTGEN_URL = os.getenv("SCRIPTGEN_URL", "http://scriptgenservice-production.up.railway.app:80")
+
 # Prompt for topic extraction
 extract_prompt = PromptTemplate.from_template(
     """
