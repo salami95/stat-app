@@ -1,55 +1,64 @@
-# orchestrator.py
-
 import os
-import logging
-from eleven_labs_scribe import transcribe_audio
-from topic_processor import extract_topics
-from education_expert import analyze_student_performance
-from build_medrag_index import query_medrag
-from medical_expert import generate_clarified_explanations
-from podcast_script_generator import generate_script
-from generate_audio import generate_audio_narration
+from topic_processor import process_topics
+from medical_expert import generate_medical_analysis
+from education_expert import generate_educational_summary
+from podcast_script_generator import generate_podcast_script
+from generate_audio import generate_audio_files
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
-def run_phase_1(audio_path):
+def process_audio_session(session_id, session_dir, transcript):
+    """
+    Orchestrates the end-to-end processing of an audio session.
+    This includes topic extraction, RAG grounding, educational analysis, and podcast generation.
+
+    Args:
+        session_id (str): Unique identifier for the user session.
+        session_dir (str): Directory for session files and outputs.
+        transcript (str): Transcript text of the uploaded audio.
+
+    Returns:
+        dict: Results dictionary with topics, scripts, and metadata.
+    """
     try:
-        session_dir = os.path.dirname(audio_path)
-        base_name = os.path.splitext(os.path.basename(audio_path))[0].replace("_audio", "")
+        print("[Orchestrator] Starting session orchestration...")
 
-        logger.info("🎙️ Transcribing audio...")
-        transcript = transcribe_audio(audio_path)
-        transcript_path = os.path.join(session_dir, f"{base_name}_transcript.txt")
-        with open(transcript_path, "w", encoding="utf-8") as f:
-            f.write(transcript)
-        logger.info(f"✅ Transcript saved to {transcript_path}")
+        # Extract and RAG-ground topics
+        topics = process_topics(transcript)
+        print(f"[Orchestrator] Topics extracted: {topics}")
 
-        logger.info("📊 Analyzing student performance...")
-        performance_report = analyze_student_performance(transcript)
-        opportunities_path = os.path.join(session_dir, "opportunities.txt")
-        with open(opportunities_path, "w", encoding="utf-8") as f:
-            f.write(performance_report)
-        logger.info(f"✅ Opportunities saved to {opportunities_path}")
+        # Prepare result containers
+        scripts = {}
+        audio_output_dir = os.path.join("static", session_dir, "audio")
+        os.makedirs(audio_output_dir, exist_ok=True)
 
-        logger.info("🧠 Extracting topics...")
-        topics = extract_topics(transcript, performance_report)
-        topics_path = os.path.join(session_dir, "topics.txt")
-        with open(topics_path, "w", encoding="utf-8") as f:
-            for topic in topics:
-                f.write(topic + "\n")
-        logger.info(f"✅ Topics saved to {topics_path}")
+        # Process each topic individually
+        for topic in topics:
+            print(f"[Orchestrator] Processing topic: {topic}")
 
+            # Medical RAG + Expert Synthesis
+            medical_insight = generate_medical_analysis(topic)
+            print(f"[Orchestrator] Medical insight generated.")
+
+            # Educational Synthesis (non-redundant, higher level)
+            education_summary = generate_educational_summary(transcript, topic)
+            print(f"[Orchestrator] Educational summary complete.")
+
+            # Podcast script generation
+            script = generate_podcast_script(topic, medical_insight, education_summary)
+            scripts[topic] = script
+            print(f"[Orchestrator] Podcast script written.")
+
+            # Text-to-speech synthesis
+            generate_audio_files(script, topic, audio_output_dir)
+            print(f"[Orchestrator] Audio file created for topic: {topic}")
+
+        print("[Orchestrator] All topics processed successfully.")
         return {
-            "session_dir": session_dir,
-            "transcript_path": transcript_path,
-            "topics_path": topics_path,
-            "opportunities_path": opportunities_path,
+            "topics": topics,
+            "scripts": scripts,
+            "session_dir": session_dir
         }
 
     except Exception as e:
-        logger.error(f"❌ Phase 1 failed: {e}", exc_info=True)
+        print(f"[Orchestrator] Error during session processing: {e}")
         raise
-
-# ✅ THIS IS REQUIRED:
-orchestrate_initial_phase = run_phase_1
