@@ -4,10 +4,10 @@ import os
 
 app = Flask(__name__)
 
-WHISPER_URL = os.getenv("WHISPER_URL", "http://whisper_service:8000/transcribe")
-TOPIC_URL = os.getenv("TOPIC_URL", "http://topic_service:8001/analyze")
-RAG_URL = os.getenv("RAG_URL", "http://rag_service:8002/retrieve")
-SCRIPTGEN_URL = os.getenv("SCRIPTGEN_URL", "http://scriptgen_service:8003/generate")
+WHISPER_URL = os.getenv("WHISPER_URL", "http://whisperservice-production.up.railway.app:80")
+TOPIC_URL = os.getenv("TOPIC_URL", "http://topicservice-production.up.railway.app:80")
+RAG_URL = os.getenv("RAG_URL", "http://ragservice-production.up.railway.app:80")
+SCRIPTGEN_URL = os.getenv("SCRIPTGEN_URL", "http://scriptgenservice-production.up.railway.app:80")
 
 @app.route("/start-job", methods=["POST"])
 def start_job():
