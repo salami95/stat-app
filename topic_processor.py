@@ -2,11 +2,15 @@ print("✅ topic_processor.py loaded from:", __file__)
 
 
 import os
-from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
+from langchain_openai import ChatOpenAI
+
+# 🔍 DEBUG: Check actual ChatOpenAI source and signature
+print("🧬 ChatOpenAI imported from:", ChatOpenAI.__module__)
+print("🧬 ChatOpenAI init signature:", ChatOpenAI.__init__.__code__.co_varnames)
 
 # 1. Extract topics using LLM
 def extract_topics(transcript: str, opportunities: str) -> list:
