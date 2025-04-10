@@ -9,8 +9,12 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "stat_secret_key")
 UPLOAD_FOLDER = tempfile.gettempdir()
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# URL for starting the backend job (adjust if using queue instead of HTTP)
-BACKEND_JOB_URL = os.getenv("BACKEND_JOB_URL", "http://localhost:5001/start-job")
+# URLs for backend services
+BACKEND_JOB_URL = os.getenv("BACKEND_JOB_URL", "http://jobqueue-production.up.railway.app/start-job")
+WHISPER_URL = os.getenv("WHISPER_URL", "http://whisperservice-production.up.railway.app:80")
+TOPIC_URL = os.getenv("TOPIC_URL", "http://topicservice-production.up.railway.app:80")
+RAG_URL = os.getenv("RAG_URL", "http://ragservice-production.up.railway.app:80")
+SCRIPTGEN_URL = os.getenv("SCRIPTGEN_URL", "http://scriptgenservice-production.up.railway.app:80")
 
 @app.route('/')
 def welcome():
@@ -30,7 +34,7 @@ def upload():
     session.modified = True
 
     try:
-        # Trigger background processing (either HTTP or queue)
+        # Trigger backend processing (this communicates with the job queue service)
         response = requests.post(BACKEND_JOB_URL, json={"filepath": filepath})
         response.raise_for_status()
         session['log_output'] += "✓ Processing job submitted successfully.\n"
