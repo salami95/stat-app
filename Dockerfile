@@ -12,7 +12,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y ffmpeg gcc && rm -rf /var/lib/apt/lists/*
 
 # Force clean reinstall (NEW line here forces rebuild)
-ARG CACHEBUSTER=1
+ARG CACHEBUSTER=2
 
 # Install Python dependencies
 COPY requirements.txt /app/
