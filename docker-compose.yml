@@ -28,3 +28,10 @@ services:
     build: ./rag_service
     ports:
       - "8002:8002"
+
+  scriptgen_service:
+    build: ./scriptgen_service
+    ports:
+      - "8003:8003"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
