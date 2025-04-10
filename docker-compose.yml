@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  ui_service:
+    build: ./ui_service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ui_service:/app
+    environment:
+      - FLASK_SECRET_KEY=supersecretkey
