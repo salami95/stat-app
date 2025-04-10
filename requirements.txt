@@ -3,7 +3,7 @@ gunicorn==21.2.0
 
 # LangChain ecosystem (must be in sync)
 openai==1.17.0
-langchain==0.1.16
+langchain==0.1.14
 langchain-core==0.1.47
 langchain-community==0.0.35
 langchain-openai==0.1.3
