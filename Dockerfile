@@ -1,5 +1,7 @@
 # Use an official lightweight Python image
 FROM python:3.12-slim
+RUN pip install --no-cache-dir sentence-transformers
+
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
