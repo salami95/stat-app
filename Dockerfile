@@ -12,12 +12,15 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y ffmpeg gcc && rm -rf /var/lib/apt/lists/*
 
 # Force clean reinstall
-ARG CACHEBUSTER=3
+ARG CACHEBUSTER=4
 
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
+
+# ✅ Preload HuggingFace model *after* installing packages
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-mpnet-base-v2')"
 
 # Copy project files
 COPY . /app/
