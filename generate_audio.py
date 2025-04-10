@@ -1,47 +1,41 @@
-# generate_audio.py
-
 import os
+from elevenlabs import generate, save, Voice, VoiceSettings
 from dotenv import load_dotenv
-from elevenlabs.client import ElevenLabs
-from elevenlabs import VoiceSettings
 
-# Load ElevenLabs API key
 load_dotenv()
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-
-if not ELEVENLABS_API_KEY:
-    raise EnvironmentError("❌ ELEVENLABS_API_KEY not set in environment variables.")
-
-# Initialize ElevenLabs TTS client
-client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+ELEVEN_LABS_API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
 
 
-def generate_audio_narration(topic: str, script_text: str, output_path: str = None) -> str:
+def generate_audio_files(script, topic, output_dir):
     """
-    Converts the script text into spoken audio using ElevenLabs.
-    Saves to the specified output path (or temp path if not provided).
-    Returns the full path to the audio file.
+    Generates an audio file from the given script using ElevenLabs TTS.
+
+    Args:
+        script (str): The podcast script text.
+        topic (str): The topic name (used for naming the output file).
+        output_dir (str): The directory where audio files will be saved.
     """
-    # Generate audio from text
-    audio = client.text_to_speech.convert(
-        voice_id="21m00Tcm4TlvDq8ikWAM",  # Rachel (update if needed)
-        model_id="eleven_multilingual_v2",
-        text=script_text,
-        voice_settings=VoiceSettings(stability=0.5, similarity_boost=0.5)
-    )
+    try:
+        print(f"[TTS] Generating audio for: {topic}")
+        
+        voice = Voice(
+            voice_id="21m00Tcm4TlvDq8ikWAM",  # Rachel voice
+            settings=VoiceSettings(
+                stability=0.3,
+                similarity_boost=0.75
+            )
+        )
 
-    # Determine output path
-    if output_path is None:
-        from tempfile import gettempdir
-        output_path = os.path.join(gettempdir(), f"{topic.replace(' ', '_')}_narration.mp3")
+        audio = generate(
+            text=script,
+            voice=voice,
+            api_key=ELEVEN_LABS_API_KEY
+        )
 
-    # Write the audio file
-    with open(output_path, "wb") as f:
-        f.write(audio)
+        output_path = os.path.join(output_dir, f"{topic.replace(' ', '_')}.mp3")
+        save(audio, output_path)
 
-    print(f"✅ Audio narration saved to {output_path}")
-    return output_path
+        print(f"[TTS] Audio saved to: {output_path}")
 
-
-# ✅ Compatibility alias for app.py
-generate_all_audio = generate_audio_narration
+    except Exception as e:
+        print(f"[TTS] Error generating audio for '{topic}': {e}")
