@@ -14,10 +14,10 @@ RUN apt-get update && apt-get install -y ffmpeg gcc && rm -rf /var/lib/apt/lists
 # Force clean reinstall
 ARG CACHEBUSTER=5
 
-# Install Python dependencies
+# Install Python dependencies and dump dependency tree
 COPY requirements.txt /app/
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir --trusted-host pypi.org -r requirements.txt \
+    pip install --no-cache-dir --trusted-host pypi.org -r requirements.txt && \
     pip install pipdeptree && pipdeptree | tee /tmp/deps.log
 
 # ✅ Preload HuggingFace model *after* installing packages
