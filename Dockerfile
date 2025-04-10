@@ -17,7 +17,7 @@ ARG CACHEBUSTER=5
 # Install Python dependencies and dump dependency tree
 COPY requirements.txt /app/
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir --trusted-host pypi.org -r requirements.txt && \
+    pip install --no-cache-dir --trusted-host pypi.org -r requirements.txt || true
     pip install pipdeptree && \
     python -m pipdeptree | tee /tmp/deps.log && \
     python -c "import pydantic; print('Using Pydantic:', pydantic.__version__)"
@@ -33,4 +33,5 @@ COPY . /app/
 EXPOSE 8080
 
 # Start the app
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "180", "app:app"]
+CMD ["pip", "check"]
+
