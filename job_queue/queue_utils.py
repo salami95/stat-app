@@ -3,8 +3,13 @@ import redis
 from rq import Queue
 from worker import conn  # Assuming the worker.py file contains your Redis connection
 
+# Use the private Redis URL provided by Railway
+redis_url = os.getenv("REDIS_URL", "redis://redis.railway.internal:6379")
+conn = redis.from_url(redis_url)
+
 # Initialize the queue
 queue = Queue(connection=conn)
+
 
 def enqueue_job(job_function, *args, **kwargs):
     """
