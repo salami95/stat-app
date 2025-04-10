@@ -1,7 +1,8 @@
 print("✅ topic_processor.py loaded from:", __file__)
 
-
 import os
+import time
+from openai import RateLimitError
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -41,7 +42,14 @@ def extract_topics(transcript: str, opportunities: str) -> list:
     """)
 
     chain = prompt | llm
-    response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
+
+    try:
+        response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
+    except RateLimitError:
+        print("🔁 Rate limit hit. Retrying in 10 seconds...")
+        time.sleep(10)
+        response = chain.invoke({"transcript": transcript, "opportunities": opportunities})
+
     return [t.strip() for t in response.content.strip().splitlines() if t.strip()]
 
 # 2. Load MedRAG index for RAG-based enrichment
