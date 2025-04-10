@@ -1,6 +1,14 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+import redis
+from rq import Queue
+
+# Use the private Redis URL provided by Railway
+redis_url = os.getenv("REDIS_URL", "redis://redis.railway.internal:6379")
+conn = redis.from_url(redis_url)
+
+queue = Queue(connection=conn)
 
 app = Flask(__name__)
 
