@@ -1,0 +1,6 @@
+flask
+openai
+langchain
+langchain-openai
+llama-index
+faiss-cpu
