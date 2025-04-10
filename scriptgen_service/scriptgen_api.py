@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+import os
 
 app = Flask(__name__)
 llm = ChatOpenAI(model="gpt-4", temperature=0.5)
@@ -22,6 +23,12 @@ script_prompt = PromptTemplate.from_template(
 )
 
 script_chain = script_prompt | llm | (lambda output: output.content.strip())
+
+# URLs for communication with other services
+WHISPER_URL = os.getenv("WHISPER_URL", "http://whisperservice-production.up.railway.app:80")
+TOPIC_URL = os.getenv("TOPIC_URL", "http://topicservice-production.up.railway.app:80")
+RAG_URL = os.getenv("RAG_URL", "http://ragservice-production.up.railway.app:80")
+SCRIPTGEN_URL = os.getenv("SCRIPTGEN_URL", "http://scriptgenservice-production.up.railway.app:80")
 
 @app.route("/generate", methods=["POST"])
 def generate():
