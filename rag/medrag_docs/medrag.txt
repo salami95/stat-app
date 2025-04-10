@@ -1,0 +1,4 @@
+- Acute appendicitis is inflammation of the appendix.
+- Diagnosis is based on clinical signs and imaging.
+- First-line imaging is often ultrasound in children and CT in adults.
+- Treatment involves surgical removal (appendectomy).
