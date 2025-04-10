@@ -4,3 +4,4 @@ langchain
 langchain-openai
 llama-index
 faiss-cpu
+langchain_community
