@@ -35,3 +35,10 @@ services:
       - "8003:8003"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  job_queue:
+    build: ./job_queue
+    ports:
+      - "8004:8004"
+    volumes:
+      - /tmp:/tmp  # allows access to shared temp files
