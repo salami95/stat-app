@@ -1,36 +1,17 @@
 import os
 import tempfile
-import openai
+from openai import OpenAI
 
-from dotenv import load_dotenv
+client = OpenAI()
 
-load_dotenv()
+def transcribe_audio(filepath):
+    if not os.path.exists(filepath):
+        raise FileNotFoundError("Audio file not found")
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-def transcribe_audio(file_path):
-    """
-    Transcribes audio using OpenAI Whisper API.
-    
-    Args:
-        file_path (str): Path to the input audio file.
-
-    Returns:
-        str: The transcribed text.
-    """
-    try:
-        print(f"[Whisper] Starting transcription for: {file_path}")
-
-        with open(file_path, "rb") as audio_file:
-            transcript_response = openai.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file,
-                response_format="text"
-            )
-
-        print("[Whisper] Transcription completed successfully.")
-        return transcript_response
-
-    except Exception as e:
-        print(f"[Whisper] Error during transcription: {e}")
-        return ""
+    with open(filepath, "rb") as audio_file:
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            response_format="text"
+        )
+    return transcript.strip()
