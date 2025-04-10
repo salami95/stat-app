@@ -1,78 +1,31 @@
-# podcast_script_generator.py
-
-import os
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
 
+script_prompt = PromptTemplate.from_template(
+    """
+    Write an educational podcast script about the topic below using only the factual notes provided.
+    Keep the tone friendly, informative, and engaging—like a solo podcast narrator teaching students.
 
-# Generate a script for a single topic using student context + grounded facts
-def generate_script(topic: str, opportunities_text: str, facts_text: str) -> str:
-    prompt = ChatPromptTemplate.from_template("""
-You are the host of a medical education podcast. Your job is to teach the topic: "{topic}" to a student who recently completed a self-guided study session.
+    Topic: {topic}
 
-Use the student's performance summary to guide tone and focus. Then use the factual context to build your episode. Avoid hallucinations. Do not include information not found in the factual context.
+    Notes:
+    ---
+    {notes}
+    ---
 
-Create a 2–5 minute segment (~300–600 words) that is:
-- Friendly but focused
-- Clear, concise, and medically accurate
-- Structured with a brief intro, core teaching, and a single key takeaway
-- Designed for students reviewing high-yield content for exams
+    Script:
+    """
+)
 
-STUDENT PERFORMANCE NOTES:
-{opportunities}
+llm = ChatOpenAI(model="gpt-4", temperature=0.5)
 
-FACTUAL CONTEXT (trusted RAG output):
-{facts}
+script_chain = script_prompt | llm | (lambda output: output.content.strip())
 
-Start your segment below:
-""")
-
-    llm = ChatOpenAI(temperature=0.5, model="gpt-4")
-    chain = prompt | llm
-
-    response = chain.invoke({
-        "topic": topic,
-        "opportunities": opportunities_text,
-        "facts": facts_text
-    })
-
-    output = response.content.strip()
-    print(f"[LENGTH] Script for '{topic}' is {len(output.split())} words")
-    return output
-
-
-# Orchestrate per-topic podcast generation
-def generate_all_scripts(session_dir: str) -> str:
-    topics_file = os.path.join(session_dir, "topics.txt")
-    topics_dir = os.path.join(session_dir, "topics")
-    output_dir = os.path.join(session_dir, "scripts")
-    os.makedirs(output_dir, exist_ok=True)
-
-    with open(topics_file, "r", encoding="utf-8") as f:
-        topics = [line.strip() for line in f if line.strip()]
-
-    with open(os.path.join(session_dir, "opportunities.txt"), "r", encoding="utf-8") as f:
-        opportunities_text = f.read()
-
-    for topic in topics:
-        facts_path = os.path.join(topics_dir, f"{topic.replace(' ', '_')}_facts.txt")
-        if not os.path.exists(facts_path):
-            print(f"[WARN] Missing facts for topic: {topic}")
-            continue
-
-        with open(facts_path, "r", encoding="utf-8") as f:
-            facts_text = f.read()
-
-        print(f"[INFO] Generating script for topic: {topic}")
-        script = generate_script(topic, opportunities_text, facts_text)
-
-        script_path = os.path.join(output_dir, f"{topic.replace(' ', '_')}.txt")
-        with open(script_path, "w", encoding="utf-8") as f:
-            f.write(script)
-
-    print(f"[INFO] All topic scripts written to: {output_dir}")
-    return output_dir
-
-
-# Compatibility alias for orchestrator.py
-generate_podcast_script = generate_all_scripts
+def generate_podcast_scripts(topic_facts):
+    return {
+        topic: script_chain.invoke({
+            "topic": topic,
+            "notes": "\n".join([str(n) for n in facts])
+        })
+        for topic, facts in topic_facts.items()
+    }
