@@ -9,3 +9,10 @@ services:
       - ./ui_service:/app
     environment:
       - FLASK_SECRET_KEY=supersecretkey
+
+  whisper_service:
+    build: ./whisper_service
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
