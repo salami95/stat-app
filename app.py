@@ -39,7 +39,7 @@ def upload():
         # 2. Run Orchestrator Phases
         pipeline = orchestrate_initial_phase(audio_path)
         topics_file, facts_dir = process_topics(
-            transcription_path=pipeline["transcription_path"],
+            transcription_path=pipeline["transcript_path"],
             opportunities_path=pipeline["opportunities_path"],
             session_dir=pipeline["session_dir"]
         )
