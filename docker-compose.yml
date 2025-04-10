@@ -23,3 +23,8 @@ services:
       - "8001:8001"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  rag_service:
+    build: ./rag_service
+    ports:
+      - "8002:8002"
