@@ -1,7 +1,5 @@
 # Use an official lightweight Python image
 FROM python:3.12-slim
-RUN pip install --no-cache-dir sentence-transformers
-
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -13,8 +11,8 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y ffmpeg gcc && rm -rf /var/lib/apt/lists/*
 
-# Force clean reinstall (NEW line here forces rebuild)
-ARG CACHEBUSTER=2
+# Force clean reinstall
+ARG CACHEBUSTER=3
 
 # Install Python dependencies
 COPY requirements.txt /app/
