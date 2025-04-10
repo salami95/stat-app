@@ -35,5 +35,6 @@ COPY . /app/
 EXPOSE 8080
 
 # Start the app
-CMD ["pipdeptree", "--warn", "fail"]
+CMD ["python", "app.py"]
+
 
