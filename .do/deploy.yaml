@@ -1,0 +1,3 @@
+name: whisper-function
+runtime: python
+entrypoint: whisper_function/handler.py
