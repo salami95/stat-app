@@ -30,18 +30,30 @@ def upload():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
 
+    # Initialize log output in the session for feedback
     session['log_output'] = "Upload received. Starting processing...\n"
     session.modified = True
 
     try:
-        # Trigger backend processing (this communicates with the job queue service)
+        # Trigger backend processing (synchronous call to job queue service)
         response = requests.post(BACKEND_JOB_URL, json={"filepath": filepath})
         response.raise_for_status()
+        data = response.json()
+
         session['log_output'] += "✓ Processing job submitted successfully.\n"
+
+        # Store the results from the backend into the session
+        session['topics'] = data.get('topics')
+        session['summary'] = data.get('summary')
+        session['scripts'] = data.get('scripts')
+
+        # Redirect directly to the results page if everything went smoothly
+        return redirect('/results')
+
     except Exception as e:
         session['log_output'] += f"✗ Failed to start processing: {str(e)}\n"
-
-    return redirect('/processing')
+        # On error, redirect to processing page to display logs
+        return redirect('/processing')
 
 @app.route('/processing')
 def processing():
@@ -49,6 +61,7 @@ def processing():
 
 @app.route('/results')
 def results():
+    # The results.html template expects topics, summary, and scripts in the session.
     return render_template("results.html", session=session)
 
 if __name__ == '__main__':
